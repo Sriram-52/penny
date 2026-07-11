@@ -1,0 +1,30 @@
+{
+  "name": "@penny/server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "try": "tsx --env-file-if-exists=.env.local scripts/try-parse.ts",
+    "eval": "tsx --env-file-if-exists=.env.local scripts/eval-parser.ts",
+    "dev": "tsx --env-file-if-exists=.env.local scripts/dev-server.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/lambda/handler.ts --bundle --platform=node --target=node22 --format=esm --external:@aws-sdk/* --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\" --outfile=dist/index.mjs",
+    "zip": "pnpm build && cd dist && zip -q -X penny-parser.zip index.mjs && echo dist/penny-parser.zip ready"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
+    "@types/node": "^22.15.0",
+    "esbuild": "^0.25.5",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^5.0.17",
+    "@ai-sdk/google-vertex": "^5.0.16",
+    "@ai-sdk/openai": "^4.0.11",
+    "@ai-sdk/openai-compatible": "^3.0.7",
+    "@aws-sdk/credential-providers": "^3.1085.0",
+    "ai": "^7.0.22",
+    "zod": "^4.4.3"
+  }
+}
