@@ -48,6 +48,7 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name penny-parser \
-            --zip-file fileb://server/dist/penny-parser.zip 
+            --zip-file fileb://server/dist/penny-parser.zip \
+            --query '{LastModified: LastModified, CodeSha256: CodeSha256}'
           
           
