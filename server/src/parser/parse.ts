@@ -8,29 +8,6 @@ import { generateObject, type LanguageModel } from "ai";
 import { buildSystemPrompt, buildUserMessage, type ParseRule } from "./prompt.js";
 import { DEFAULT_CATEGORIES, parseResultSchema, type ParseResult } from "./schema.js";
 
-export function sanitizeCategories(input: unknown): string[] {
-  if (!Array.isArray(input)) return [];
-  return input
-    .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
-    .slice(0, 50)
-    .map((c) => c.trim().toLowerCase().slice(0, 30));
-}
-
-export function sanitizeRules(input: unknown): ParseRule[] {
-  if (!Array.isArray(input)) return [];
-  return input
-    .filter(
-      (r): r is { pattern: unknown; category: unknown } =>
-        typeof r === "object" && r !== null && "pattern" in r && "category" in r,
-    )
-    .filter((r) => typeof r.pattern === "string" && typeof r.category === "string")
-    .slice(0, 100)
-    .map((r) => ({
-      pattern: String(r.pattern).slice(0, 80),
-      category: String(r.category).slice(0, 30),
-    }));
-}
-
 // Model spec: "<provider>:<model-id>", swappable via env without code changes.
 //   bedrock:us.anthropic.claude-haiku-4-5-20251001-v1:0
 //   bedrock:us.amazon.nova-lite-v1:0
@@ -112,12 +89,6 @@ export interface ParseOptions {
   categories?: string[];
   currency?: string;
   received?: boolean;
-}
-
-export function sanitizeCurrency(input: unknown): string | undefined {
-  if (typeof input !== "string") return undefined;
-  const trimmed = input.trim().toUpperCase();
-  return /^[A-Z]{3}$/.test(trimmed) ? trimmed : undefined;
 }
 
 export async function parseExpenses(text: string, options: ParseOptions = {}): Promise<ParseResult> {

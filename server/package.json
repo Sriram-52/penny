@@ -8,7 +8,7 @@
     "eval": "tsx --env-file-if-exists=.env.local scripts/eval-parser.ts",
     "dev": "tsx --env-file-if-exists=.env.local scripts/dev-server.ts",
     "typecheck": "tsc --noEmit",
-    "build": "esbuild src/lambda/handler.ts --bundle --platform=node --target=node22 --format=esm --external:@aws-sdk/* --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\" --outfile=dist/index.mjs",
+    "build": "node esbuild.config.mjs",
     "zip": "pnpm build && cd dist && zip -q -X penny-parser.zip index.mjs && echo dist/penny-parser.zip ready"
   },
   "devDependencies": {
