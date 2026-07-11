@@ -4,4 +4,5 @@ export type RootStackParamList = {
   // pocketId null = the built-in Everyday pocket.
   Pocket: { pocketId: string | null };
   Settings: undefined;
+  Insights: undefined;
 };
