@@ -1,0 +1,31 @@
+name: Deploy App
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  fingerprint:
+    type: fingerprint
+    environment: preview
+
+  get_android_build:
+    needs: [fingerprint]
+    type: get-build
+    params:
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+      profile: preview
+
+  build_android:
+    needs: [get_android_build]
+    if: ${{ !needs.get_android_build.outputs.build_id }}   # no build with this fingerprint → build
+    type: build
+    environment: preview
+    params: { platform: android, profile: preview }
+
+  publish_android_update:
+    needs: [get_android_build]
+    if: ${{ needs.get_android_build.outputs.build_id }}    # build exists → OTA is safe
+    type: update
+    environment: preview
+    params: { branch: preview, platform: android }        
