@@ -143,7 +143,7 @@ export function PocketScreen({ route, navigation }: Props) {
     sheet.show({
       title: `🎒 ${pocket.name}`,
       actions: [
-        { label: "Edit name & date", onPress: () => setEditing(true) },
+        { label: "Edit name, date & budget", onPress: () => setEditing(true) },
         {
           label: "Delete pocket",
           destructive: true,
