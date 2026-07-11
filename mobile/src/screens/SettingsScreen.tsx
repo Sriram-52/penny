@@ -23,6 +23,7 @@ import {
   alignExpenseCurrency,
   deleteCategory,
   deleteRule,
+  getMonthlyBudget,
   getSetting,
   setSetting,
   useCategories,
@@ -47,6 +48,10 @@ export function SettingsScreen({ navigation }: Props) {
   const [newTagName, setNewTagName] = useState("");
   const [currency, setCurrency] = useState<string | null>(() => getSetting("currency"));
   const [appLock, setAppLock] = useState(() => getSetting("appLock") === "1");
+  const [budgetText, setBudgetText] = useState(() => {
+    const b = getMonthlyBudget();
+    return b === null ? "" : String(b);
+  });
 
   const toggleAppLock = async (value: boolean) => {
     if (value) {
@@ -104,6 +109,18 @@ export function SettingsScreen({ navigation }: Props) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const saveBudget = () => {
+    const n = Number(budgetText);
+    if (budgetText.trim() === "") {
+      setSetting("monthlyBudget", null);
+    } else if (Number.isFinite(n) && n > 0) {
+      setSetting("monthlyBudget", String(n));
+    } else {
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const ruleCategoryMeta = getCategoryMeta(ruleCategory, categories);
 
   return (
@@ -158,6 +175,28 @@ export function SettingsScreen({ navigation }: Props) {
                   void alignExpenseCurrency(code);
                 }}
               />
+            </View>
+          </View>
+
+          <Text style={[styles.sectionTitle, { color: theme.muted }]}>MONTHLY BUDGET</Text>
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Text style={[styles.sectionHint, { color: theme.muted }]}>
+              A gentle monthly target. Leave blank to turn it off. Shown on your home screen.
+            </Text>
+            <View style={styles.ruleAddRow}>
+              <TextInput
+                style={[
+                  styles.nameInput,
+                  { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text },
+                ]}
+                value={budgetText}
+                onChangeText={setBudgetText}
+                placeholder="e.g. 1500"
+                placeholderTextColor={theme.muted}
+                keyboardType="numeric"
+                onSubmitEditing={saveBudget}
+              />
+              <AddButton theme={theme} enabled onPress={saveBudget} />
             </View>
           </View>
 

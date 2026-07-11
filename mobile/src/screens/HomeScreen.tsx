@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BudgetMeter } from "../components/BudgetMeter";
 import { CategoryBreakdown } from "../components/CategoryBreakdown";
 import { ConfirmCards } from "../components/ConfirmCards";
 import { EntryBar } from "../components/EntryBar";
@@ -24,6 +25,7 @@ import {
   alignExpenseCurrency,
   createPocket,
   getCurrency,
+  getMonthlyBudget,
   getSetting,
   removeExpense,
   useCategories,
@@ -92,6 +94,7 @@ export function HomeScreen({ navigation }: Props) {
       void alignExpenseCurrency(currency);
     }
   }, [rows, currency]);
+  const monthlyBudget = getMonthlyBudget();
   const monthSpent = monthRows
     .filter((r) => r.kind !== "credit")
     .reduce((sum, r) => sum + r.amount, 0);
@@ -240,6 +243,17 @@ export function HomeScreen({ navigation }: Props) {
                 <Text style={[styles.pulse, { color: pulse.good ? theme.credit : theme.muted }]}>
                   {pulse.text}
                 </Text>
+              )}
+              {monthOffset === 0 && monthlyBudget !== null && (
+                <View style={{ marginTop: 8 }}>
+                  <BudgetMeter
+                    theme={theme}
+                    label="Monthly budget"
+                    spent={monthSpent}
+                    budget={monthlyBudget}
+                    currency={currency}
+                  />
+                </View>
               )}
             </View>
             <Pressable

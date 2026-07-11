@@ -218,6 +218,14 @@ export function getCurrency(): string {
   return getSetting("currency") ?? "USD";
 }
 
+// The single app-wide monthly spending target, or null if unset.
+export function getMonthlyBudget(): number | null {
+  const raw = getSetting("monthlyBudget");
+  if (raw === null) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export function getSetting(key: string): string | null {
   const row = sqlite.getFirstSync("SELECT value FROM settings WHERE key = ?", [key]) as
     | { value: string }
