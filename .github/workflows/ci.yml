@@ -1,0 +1,53 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: 
+      - main
+    paths: 
+      - "server/**"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-server:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: |
+          pnpm --filter=@penny/server install --frozen-lockfile
+
+      - name: Zip the source
+        run: |
+          pnpm --filter=@penny/server zip
+
+      - name: Authenticate with AWS using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
+          role-session-name: "GH-Deploy-${{ github.run_id }}"
+          
+      - name: Deploy lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name penny-parser \
+            --zip-file fileb://server/dist/penny-parser.zip 
+          
+          
