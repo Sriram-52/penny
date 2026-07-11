@@ -11,7 +11,8 @@ interface Props {
   title: string;
   initialName?: string;
   initialDate?: string | null;
-  onSubmit: (name: string, eventDate: string | null) => void;
+  initialTarget?: number | null;
+  onSubmit: (name: string, eventDate: string | null, target: number | null) => void;
   onCancel: () => void;
 }
 
@@ -31,20 +32,30 @@ export function PocketNameModal({
   title,
   initialName,
   initialDate,
+  initialTarget,
   onSubmit,
   onCancel,
 }: Props) {
   const [name, setName] = useState(initialName ?? "");
   const [eventDate, setEventDate] = useState<string | null>(initialDate ?? null);
+  const [targetText, setTargetText] = useState(
+    initialTarget != null ? String(initialTarget) : "",
+  );
 
   useEffect(() => {
     if (visible) {
       setName(initialName ?? "");
       setEventDate(initialDate ?? null);
+      setTargetText(initialTarget != null ? String(initialTarget) : "");
     }
-  }, [visible, initialName, initialDate]);
+  }, [visible, initialName, initialDate, initialTarget]);
 
   const trimmed = name.trim();
+  const parsedTarget = targetText.trim() === "" ? null : Number(targetText);
+  const targetValid = parsedTarget === null || (Number.isFinite(parsedTarget) && parsedTarget > 0);
+  const submit = () => {
+    if (trimmed && targetValid) onSubmit(trimmed, eventDate, parsedTarget);
+  };
 
   const pickDate = () => {
     if (Platform.OS !== "android") return;
@@ -71,7 +82,7 @@ export function PocketNameModal({
           placeholderTextColor={theme.muted}
           autoFocus
           maxLength={40}
-          onSubmitEditing={() => trimmed && onSubmit(trimmed, eventDate)}
+          onSubmitEditing={submit}
         />
         <View style={styles.dateRow}>
           <Pressable onPress={pickDate} hitSlop={6} style={styles.dateButton}>
@@ -86,12 +97,23 @@ export function PocketNameModal({
             </Pressable>
           )}
         </View>
+        <TextInput
+          style={[
+            styles.input,
+            { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text },
+          ]}
+          value={targetText}
+          onChangeText={setTargetText}
+          placeholder="Budget for this pocket (optional)"
+          placeholderTextColor={theme.muted}
+          keyboardType="numeric"
+        />
         <View style={styles.actions}>
           <Pressable onPress={onCancel} hitSlop={8} style={styles.cancel}>
             <Text style={[styles.cancelLabel, { color: theme.muted }]}>Cancel</Text>
           </Pressable>
           <Pressable
-            onPress={() => trimmed && onSubmit(trimmed, eventDate)}
+            onPress={submit}
             disabled={!trimmed}
             style={({ pressed }) => [
               styles.save,

@@ -26,6 +26,8 @@ export const pockets = sqliteTable("pockets", {
   name: text("name").notNull(),
   // Optional occasion date (YYYY-MM-DD), e.g. when the trip starts.
   eventDate: text("event_date"),
+  // Optional spending target for this pocket (single currency, bare number).
+  target: real("target"),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -91,6 +93,9 @@ const pocketColumns = sqlite.getAllSync("PRAGMA table_info(pockets)") as Array<{
 if (!pocketColumns.some((c) => c.name === "event_date")) {
   sqlite.execSync("ALTER TABLE pockets ADD COLUMN event_date TEXT");
 }
+if (!pocketColumns.some((c) => c.name === "target")) {
+  sqlite.execSync("ALTER TABLE pockets ADD COLUMN target REAL");
+}
 if (!expenseColumns.some((c) => c.name === "kind")) {
   sqlite.execSync("ALTER TABLE expenses ADD COLUMN kind TEXT NOT NULL DEFAULT 'debit'");
 }
@@ -148,15 +153,19 @@ export async function updateExpense(
   await db.update(expenses).set(patch).where(eq(expenses.id, id));
 }
 
-export async function createPocket(name: string, eventDate: string | null): Promise<string> {
+export async function createPocket(
+  name: string,
+  eventDate: string | null,
+  target: number | null,
+): Promise<string> {
   const id = Crypto.randomUUID();
-  await db.insert(pockets).values({ id, name, eventDate, createdAt: Date.now() });
+  await db.insert(pockets).values({ id, name, eventDate, target, createdAt: Date.now() });
   return id;
 }
 
 export async function updatePocket(
   id: string,
-  patch: { name: string; eventDate: string | null },
+  patch: { name: string; eventDate: string | null; target: number | null },
 ): Promise<void> {
   await db.update(pockets).set(patch).where(eq(pockets.id, id));
 }

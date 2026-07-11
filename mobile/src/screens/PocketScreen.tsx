@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ActionSheet, useActionSheet } from "../components/ActionSheet";
+import { BudgetMeter } from "../components/BudgetMeter";
 import { CategoryBreakdown } from "../components/CategoryBreakdown";
 import { ConfirmCards } from "../components/ConfirmCards";
 import { EntryBar } from "../components/EntryBar";
@@ -91,6 +92,10 @@ export function PocketScreen({ route, navigation }: Props) {
     return pocketId === null ? inPocket.filter((r) => r.date.startsWith(monthPrefix)) : inPocket;
   }, [rows, pocketId, monthPrefix]);
   const currency = getCurrency();
+  const spentAmount = useMemo(
+    () => visibleRows.filter((r) => r.kind !== "credit").reduce((sum, r) => sum + r.amount, 0),
+    [visibleRows],
+  );
 
   const byCategory = useMemo(() => {
     const totals = new Map<string, number>();
@@ -245,16 +250,29 @@ export function PocketScreen({ route, navigation }: Props) {
         <SectionList
           sections={sections}
           ListHeaderComponent={
-            byCategory.length > 1 ? (
-              <View style={styles.breakdownWrap}>
-                <CategoryBreakdown
-                  theme={theme}
-                  categories={categories}
-                  byCategory={byCategory}
-                  currency={currency}
-                />
-              </View>
-            ) : null
+            <>
+              {pocket?.target != null && (
+                <View style={styles.breakdownWrap}>
+                  <BudgetMeter
+                    theme={theme}
+                    label="Trip budget"
+                    spent={spentAmount}
+                    budget={pocket.target}
+                    currency={currency}
+                  />
+                </View>
+              )}
+              {byCategory.length > 1 ? (
+                <View style={styles.breakdownWrap}>
+                  <CategoryBreakdown
+                    theme={theme}
+                    categories={categories}
+                    byCategory={byCategory}
+                    currency={currency}
+                  />
+                </View>
+              ) : null}
+            </>
           }
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -335,8 +353,9 @@ export function PocketScreen({ route, navigation }: Props) {
           title="Edit pocket"
           initialName={pocket.name}
           initialDate={pocket.eventDate}
-          onSubmit={async (name, eventDate) => {
-            await updatePocket(pocket.id, { name, eventDate });
+          initialTarget={pocket.target}
+          onSubmit={async (name, eventDate, target) => {
+            await updatePocket(pocket.id, { name, eventDate, target });
             setEditing(false);
           }}
           onCancel={() => setEditing(false)}

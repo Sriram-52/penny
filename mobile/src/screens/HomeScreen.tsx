@@ -417,8 +417,8 @@ export function HomeScreen({ navigation }: Props) {
         theme={theme}
         visible={creatingPocket}
         title="New pocket"
-        onSubmit={async (name, eventDate) => {
-          const id = await createPocket(name, eventDate);
+        onSubmit={async (name, eventDate, target) => {
+          const id = await createPocket(name, eventDate, target);
           setCreatingPocket(false);
           navigation.navigate("Pocket", { pocketId: id });
         }}
