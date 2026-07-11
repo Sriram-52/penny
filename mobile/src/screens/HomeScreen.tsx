@@ -1,7 +1,8 @@
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -94,7 +95,15 @@ export function HomeScreen({ navigation }: Props) {
       void alignExpenseCurrency(currency);
     }
   }, [rows, currency]);
-  const monthlyBudget = getMonthlyBudget();
+  // The monthly budget lives in the `settings` table, which the expense
+  // live-query doesn't watch — so re-read it each time Home regains focus
+  // (e.g. returning from Settings after changing it).
+  const [monthlyBudget, setMonthlyBudget] = useState<number | null>(() => getMonthlyBudget());
+  useFocusEffect(
+    useCallback(() => {
+      setMonthlyBudget(getMonthlyBudget());
+    }, []),
+  );
   const monthSpent = monthRows
     .filter((r) => r.kind !== "credit")
     .reduce((sum, r) => sum + r.amount, 0);
