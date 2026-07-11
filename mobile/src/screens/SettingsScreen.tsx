@@ -4,13 +4,16 @@ import * as LocalAuthentication from "expo-local-authentication";
 import { useState } from "react";
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
+  ToastAndroid,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -109,16 +112,26 @@ export function SettingsScreen({ navigation }: Props) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const toast = (message: string) => {
+    if (Platform.OS === "android") ToastAndroid.show(message, ToastAndroid.SHORT);
+  };
+
   const saveBudget = () => {
     const n = Number(budgetText);
+    let message: string;
     if (budgetText.trim() === "") {
       setSetting("monthlyBudget", null);
+      message = "Monthly budget cleared";
     } else if (Number.isFinite(n) && n > 0) {
       setSetting("monthlyBudget", String(n));
+      message = "Monthly budget saved";
     } else {
+      toast("Enter an amount above 0");
       return;
     }
+    Keyboard.dismiss();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toast(message);
   };
 
   const ruleCategoryMeta = getCategoryMeta(ruleCategory, categories);
