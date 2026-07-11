@@ -1,3 +1,13 @@
 packages:
   - server
   - mobile
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@ai-sdk/amazon-bedrock@5.0.17'
+  - '@ai-sdk/anthropic@4.0.12'
+  - '@ai-sdk/gateway@4.0.16'
+  - '@ai-sdk/google-vertex@5.0.16'
+  - '@aws-sdk/credential-providers@3.1085.0'
+  - 'ai@7.0.22'
+  - 'shell-quote@1.10.0'

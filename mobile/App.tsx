@@ -4,6 +4,7 @@ import { StyleSheet, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AppLock } from "./src/components/AppLock";
 import { getSetting } from "./src/db";
 import type { RootStackParamList } from "./src/nav";
 import { HomeScreen } from "./src/screens/HomeScreen";
@@ -41,16 +42,18 @@ function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
-      <Stack.Navigator
-        initialRouteName={getSetting("currency") ? "Home" : "Onboarding"}
-        screenOptions={{ headerShown: false, animation: "slide_from_right" }}
-      >
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Pocket" component={PocketScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AppLock theme={theme}>
+      <NavigationContainer theme={navTheme}>
+        <Stack.Navigator
+          initialRouteName={getSetting("currency") ? "Home" : "Onboarding"}
+          screenOptions={{ headerShown: false, animation: "slide_from_right" }}
+        >
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Pocket" component={PocketScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AppLock>
   );
 }

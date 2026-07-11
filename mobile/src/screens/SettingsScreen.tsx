@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
+import * as LocalAuthentication from "expo-local-authentication";
 import { useState } from "react";
 import {
   Alert,
@@ -7,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -44,6 +46,28 @@ export function SettingsScreen({ navigation }: Props) {
   const [newTagEmoji, setNewTagEmoji] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [currency, setCurrency] = useState<string | null>(() => getSetting("currency"));
+  const [appLock, setAppLock] = useState(() => getSetting("appLock") === "1");
+
+  const toggleAppLock = async (value: boolean) => {
+    if (value) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !enrolled) {
+        Alert.alert(
+          "No screen lock set up",
+          "Add a fingerprint, face unlock, or PIN in your phone's settings first, then come back.",
+        );
+        return;
+      }
+    }
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: value ? "Confirm to turn on app lock" : "Confirm to turn off app lock",
+    });
+    if (!result.success) return;
+    setSetting("appLock", value ? "1" : null);
+    setAppLock(value);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
 
   const [rulePattern, setRulePattern] = useState("");
   const [ruleCategory, setRuleCategory] = useState("dining");
@@ -101,6 +125,24 @@ export function SettingsScreen({ navigation }: Props) {
           contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
           keyboardShouldPersistTaps="handled"
         >
+          <Text style={[styles.sectionTitle, { color: theme.muted }]}>PRIVACY</Text>
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleText}>
+                <Text style={[styles.toggleLabel, { color: theme.text }]}>Lock Penny</Text>
+                <Text style={[styles.toggleHint, { color: theme.muted }]}>
+                  Ask for your fingerprint, face, or PIN when opening the app.
+                </Text>
+              </View>
+              <Switch
+                value={appLock}
+                onValueChange={(value) => void toggleAppLock(value)}
+                trackColor={{ false: theme.border, true: `${theme.accent}88` }}
+                thumbColor={appLock ? theme.accent : theme.card}
+              />
+            </View>
+          </View>
+
           <Text style={[styles.sectionTitle, { color: theme.muted }]}>CURRENCY</Text>
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Text style={[styles.sectionHint, { color: theme.muted }]}>
@@ -364,6 +406,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   currencyWrap: { paddingHorizontal: 16, paddingBottom: 6 },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 2,
+  },
+  toggleText: { flex: 1, gap: 2 },
+  toggleLabel: { fontSize: 15, fontWeight: "600" },
+  toggleHint: { fontSize: 12, lineHeight: 17 },
   ruleRow: {
     flexDirection: "row",
     alignItems: "center",
