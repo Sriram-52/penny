@@ -55,8 +55,8 @@ export function ExpenseEditSheet({ theme, expense, categories, pockets, onClose 
   const amount = Number(amountText);
   const valid = Number.isFinite(amount) && amount !== 0 && description.trim().length > 0;
 
-  const pocketLabel =
-    pocketId === null ? "🪙 Everyday" : `🎒 ${pockets.find((p) => p.id === pocketId)?.name ?? "?"}`;
+  const pocketName =
+    pocketId === null ? "Everyday" : (pockets.find((p) => p.id === pocketId)?.name ?? "?");
 
   const pickDate = () => {
     if (Platform.OS !== "android") return;
@@ -141,22 +141,23 @@ export function ExpenseEditSheet({ theme, expense, categories, pockets, onClose 
             style={[styles.chip, { backgroundColor: `${meta.tint}26` }]}
             accessibilityLabel={`Tag ${meta.label}, tap to change`}
           >
-            <Text style={[styles.chipLabel, { color: theme.text }]}>
-              {meta.emoji} {meta.label}
-            </Text>
+            <Text style={styles.chipEmoji}>{meta.emoji}</Text>
+            <Text style={[styles.chipLabel, { color: theme.text }]}>{meta.label}</Text>
           </Pressable>
           {pockets.length > 0 && (
             <Pressable
               onPress={pickPocket}
               style={[styles.chip, { backgroundColor: `${theme.accent}1F` }]}
-              accessibilityLabel={`Pocket ${pocketLabel}, tap to change`}
+              accessibilityLabel={`Pocket ${pocketName}, tap to change`}
             >
-              <Text style={[styles.chipLabel, { color: theme.text }]}>{pocketLabel}</Text>
+              <Text style={styles.chipEmoji}>{pocketId === null ? "🪙" : "🎒"}</Text>
+              <Text style={[styles.chipLabel, { color: theme.text }]}>{pocketName}</Text>
             </Pressable>
           )}
           <Pressable onPress={pickDate} style={[styles.chip, { backgroundColor: `${theme.accent}1F` }]}>
+            <Text style={styles.chipEmoji}>📅</Text>
             <Text style={[styles.chipLabel, { color: theme.text }]}>
-              📅 {friendlyDay(date, localToday())}
+              {friendlyDay(date, localToday())}
             </Text>
           </Pressable>
           <Pressable
@@ -248,10 +249,16 @@ const styles = StyleSheet.create({
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
+  // Emoji live in their own Text: Samsung's font stack can drop glyphs that
+  // follow an emoji inside a single semibold text run.
+  chipEmoji: { fontSize: 13 },
   chipLabel: { fontSize: 13, fontWeight: "600" },
   actions: {
     flexDirection: "row",

@@ -75,8 +75,9 @@ export function PocketNameModal({
         />
         <View style={styles.dateRow}>
           <Pressable onPress={pickDate} hitSlop={6} style={styles.dateButton}>
+            <Text style={styles.dateEmoji}>📅</Text>
             <Text style={[styles.dateLabel, { color: eventDate ? theme.text : theme.muted }]}>
-              {eventDate ? `📅 ${displayDate(eventDate)}` : "📅 Add a date (optional)"}
+              {eventDate ? displayDate(eventDate) : "Add a date (optional)"}
             </Text>
           </Pressable>
           {eventDate && (
@@ -123,7 +124,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   dateRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  dateButton: { paddingVertical: 2 },
+  dateButton: { flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 2 },
+  // Separate Text: Samsung's font stack can drop glyphs after an emoji in a
+  // single semibold text run.
+  dateEmoji: { fontSize: 14 },
   dateLabel: { fontSize: 14, fontWeight: "600" },
   actions: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 14 },
   cancel: { paddingVertical: 8, paddingHorizontal: 4 },
