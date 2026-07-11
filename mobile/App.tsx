@@ -8,6 +8,7 @@ import { AppLock } from "./src/components/AppLock";
 import { getSetting } from "./src/db";
 import type { RootStackParamList } from "./src/nav";
 import { HomeScreen } from "./src/screens/HomeScreen";
+import { InsightsScreen } from "./src/screens/InsightsScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { PocketScreen } from "./src/screens/PocketScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
@@ -52,6 +53,7 @@ function AppNavigator() {
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Pocket" component={PocketScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Insights" component={InsightsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </AppLock>

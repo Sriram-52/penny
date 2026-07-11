@@ -268,7 +268,14 @@ export function HomeScreen({ navigation }: Props) {
 
           {byCategory.length > 0 && (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.muted }]}>WHERE IT WENT</Text>
+              <Pressable
+                onPress={() => navigation.navigate("Insights")}
+                style={styles.sectionHeaderRow}
+                hitSlop={6}
+              >
+                <Text style={[styles.sectionTitle, { color: theme.muted }]}>WHERE IT WENT</Text>
+                <Text style={[styles.seeTrends, { color: theme.accent }]}>See trends ›</Text>
+              </Pressable>
               <CategoryBreakdown
                 theme={theme}
                 categories={categories}
@@ -500,6 +507,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 8,
   },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingRight: 20,
+  },
+  seeTrends: { fontSize: 12, fontWeight: "700" },
   cardBlock: {
     marginHorizontal: 14,
     borderRadius: 18,
