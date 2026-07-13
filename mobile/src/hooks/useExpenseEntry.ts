@@ -5,6 +5,7 @@ import { Alert, LayoutAnimation } from "react-native";
 import type { Draft } from "../components/ConfirmCards";
 import { draftAmountValid } from "../components/ConfirmCards";
 import { addRule, getCurrency, saveExpenses, useCategories, useRules } from "../db";
+import { localToday } from "../lib/format";
 import { parseNote } from "../lib/parseClient";
 import type { ParsedExpense } from "../types";
 
@@ -13,7 +14,13 @@ export const animate = () =>
 
 // Entry box → parse → confirm drafts → save. Shared by Home and Pocket screens;
 // `defaultPocketId` decides where parsed expenses land (null = Everyday).
-export function useExpenseEntry(defaultPocketId: string | null) {
+// `defaultDate` ("YYYY-MM-DD") is the date a new entry lands on when the note
+// itself names no date — so adding while browsing a past month records in that
+// month, not today. Defaults to today for the normal current-month case.
+export function useExpenseEntry(
+  defaultPocketId: string | null,
+  defaultDate?: string,
+) {
   const { data: ruleRows } = useRules();
   const { data: categoryRows } = useCategories();
   const rules = ruleRows ?? [];
@@ -43,6 +50,9 @@ export function useExpenseEntry(defaultPocketId: string | null) {
         return;
       }
       animate();
+      // The parser falls back to today when the note names no date; when we're
+      // browsing another month, land those undated entries in that month instead.
+      const today = localToday();
       setDrafts(
         result.expenses.map((e, i) => ({
           key: `${Date.now()}-${i}`,
@@ -52,7 +62,7 @@ export function useExpenseEntry(defaultPocketId: string | null) {
           description: e.description,
           category: e.category,
           originalCategory: e.category,
-          date: e.date,
+          date: defaultDate && e.date === today ? defaultDate : e.date,
           confidence: e.confidence,
           pocketId: defaultPocketId,
         })),

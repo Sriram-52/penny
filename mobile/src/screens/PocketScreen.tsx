@@ -1,4 +1,4 @@
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -34,7 +34,6 @@ import {
 import { animate, useExpenseEntry } from "../hooks/useExpenseEntry";
 import { entryExample } from "../lib/examples";
 import { formatMoney, friendlyDay, localToday } from "../lib/format";
-import type { RootStackParamList } from "../nav";
 import { useTheme } from "../theme";
 
 interface DaySection {
@@ -43,10 +42,11 @@ interface DaySection {
   data: ExpenseRecord[];
 }
 
-type Props = NativeStackScreenProps<RootStackParamList, "Pocket">;
-
-export function PocketScreen({ route, navigation }: Props) {
-  const { pocketId } = route.params;
+// pocketId: the built-in Everyday pocket arrives as the route id "everyday".
+export function PocketScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const pocketId = id === "everyday" ? null : id;
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { data: rows } = useExpenses();
@@ -56,7 +56,6 @@ export function PocketScreen({ route, navigation }: Props) {
   const categories = categoryRows ?? [];
 
   const pocket = pocketId === null ? null : pockets.find((p) => p.id === pocketId);
-  const entry = useExpenseEntry(pocketId);
   const [editing, setEditing] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
   // Everyday is browsed month by month; trip pockets are one bounded event.
@@ -72,6 +71,16 @@ export function PocketScreen({ route, navigation }: Props) {
     ...(viewedMonth.getFullYear() !== now.getFullYear() ? { year: "numeric" } : {}),
   });
 
+  // Everyday can browse past months; land undated entries in the viewed month.
+  // Trip pockets aren't month-scoped, so they keep today's date.
+  const monthDefaultDate = useMemo(() => {
+    if (pocketId !== null || monthOffset === 0) return today;
+    const daysInMonth = new Date(viewedMonth.getFullYear(), viewedMonth.getMonth() + 1, 0).getDate();
+    const day = Math.min(now.getDate(), daysInMonth);
+    return `${monthPrefix}-${String(day).padStart(2, "0")}`;
+  }, [pocketId, monthOffset, monthPrefix, today, viewedMonth, now]);
+  const entry = useExpenseEntry(pocketId, monthDefaultDate);
+
   // Trip mode: remember where she is so a cold start reopens here.
   useEffect(() => {
     setSetting("lastPocket", pocketId ?? "__everyday__");
@@ -83,9 +92,9 @@ export function PocketScreen({ route, navigation }: Props) {
   // initial value is an empty array, which would false-positive here.
   useEffect(() => {
     if (pocketId !== null && pocketsLoadedAt && !pocket) {
-      navigation.goBack();
+      router.back();
     }
-  }, [pocketId, pocketsLoadedAt, pocket, navigation]);
+  }, [pocketId, pocketsLoadedAt, pocket, router]);
 
   const visibleRows = useMemo(() => {
     const inPocket = (rows ?? []).filter((r) => (r.pocketId ?? null) === pocketId);
@@ -158,7 +167,7 @@ export function PocketScreen({ route, navigation }: Props) {
                   style: "destructive",
                   onPress: async () => {
                     await deletePocket(pocket.id);
-                    navigation.goBack();
+                    router.back();
                   },
                 },
               ],
@@ -192,10 +201,10 @@ export function PocketScreen({ route, navigation }: Props) {
       <KeyboardAvoidingView style={styles.screen} behavior="padding">
         <View style={styles.header}>
           <Pressable
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
             hitSlop={10}
             style={[styles.backButton, { backgroundColor: theme.card, borderColor: theme.border }]}
-            accessibilityLabel="Back to home"
+            accessibilityLabel="Back"
           >
             <Text style={[styles.backIcon, { color: theme.text }]}>‹</Text>
           </Pressable>

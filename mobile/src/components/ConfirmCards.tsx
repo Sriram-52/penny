@@ -1,6 +1,7 @@
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import type { CategoryRecord, PocketRecord } from "../db";
 import { getCategoryMeta } from "../lib/categories";
@@ -27,6 +28,10 @@ export interface Draft {
 export function draftAmountValid(draft: Draft): boolean {
   const n = Number(draft.amountText);
   return Number.isFinite(n) && n !== 0;
+}
+
+function toDateString(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 interface Props {
@@ -74,6 +79,18 @@ export function ConfirmCards({
   const pocketLabel = (pocketId: string | null) =>
     pocketId === null ? "🪙 Everyday" : `🎒 ${pockets.find((p) => p.id === pocketId)?.name ?? "?"}`;
 
+  const pickDate = (draft: Draft) => {
+    if (Platform.OS !== "android") return;
+    Haptics.selectionAsync();
+    DateTimePickerAndroid.open({
+      value: new Date(`${draft.date}T12:00:00`),
+      mode: "date",
+      onValueChange: (_event, picked) => {
+        if (picked) onChange(draft.key, { date: toDateString(picked) });
+      },
+    });
+  };
+
   return (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
       <View style={styles.header}>
@@ -117,9 +134,15 @@ export function ConfirmCards({
                     </Text>
                   </Pressable>
                 )}
-                <Text style={[styles.date, { color: theme.muted }]}>
-                  {friendlyDay(draft.date, today)}
-                </Text>
+                <Pressable
+                  onPress={() => pickDate(draft)}
+                  style={[styles.chip, { backgroundColor: `${theme.accent}1F` }]}
+                  accessibilityLabel={`Date ${friendlyDay(draft.date, today)}, tap to change`}
+                >
+                  <Text style={[styles.chipLabel, { color: theme.text }]}>
+                    📅 {friendlyDay(draft.date, today)}
+                  </Text>
+                </Pressable>
                 <Pressable
                   onPress={() => {
                     Haptics.selectionAsync();

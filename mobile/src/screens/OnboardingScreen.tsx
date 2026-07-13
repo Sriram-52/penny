@@ -1,4 +1,4 @@
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -7,21 +7,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CurrencyGrid } from "../components/CurrencyGrid";
 import { alignExpenseCurrency, setSetting } from "../db";
 import { entryExample } from "../lib/examples";
-import type { RootStackParamList } from "../nav";
 import { useTheme } from "../theme";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Onboarding">;
-
-export function OnboardingScreen({ navigation }: Props) {
+export function OnboardingScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [currency, setCurrency] = useState<string | null>(null);
 
   const start = () => {
     if (!currency) return;
     setSetting("currency", currency);
     void alignExpenseCurrency(currency);
-    navigation.replace("Home");
+    router.replace("/");
   };
 
   return (

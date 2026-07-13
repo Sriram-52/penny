@@ -1,8 +1,7 @@
-import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -20,7 +19,6 @@ import { ConfirmCards } from "../components/ConfirmCards";
 import { EntryBar } from "../components/EntryBar";
 import { ExpenseEditSheet } from "../components/ExpenseEditSheet";
 import { ExpenseRow } from "../components/ExpenseRow";
-import { MonthPicker } from "../components/MonthPicker";
 import { PocketNameModal } from "../components/PocketNameModal";
 import {
   alignExpenseCurrency,
@@ -37,14 +35,14 @@ import {
 import { animate, useExpenseEntry } from "../hooks/useExpenseEntry";
 import { entryExample, fullExample } from "../lib/examples";
 import { formatMoney, friendlyDay, localToday } from "../lib/format";
-import type { RootStackParamList } from "../nav";
 import { useTheme } from "../theme";
 
 const RECENT_COUNT = 7;
 
-type Props = NativeStackScreenProps<RootStackParamList, "Home">;
-
-export function HomeScreen({ navigation }: Props) {
+// The per-month detail screen: opened from the Year view with a "YYYY-MM" key.
+export function HomeScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ key?: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { data: rows } = useExpenses();
@@ -53,11 +51,17 @@ export function HomeScreen({ navigation }: Props) {
   const pockets = pocketRows ?? [];
   const categories = categoryRows ?? [];
 
-  const entry = useExpenseEntry(null);
   const [creatingPocket, setCreatingPocket] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
-  const [monthOffset, setMonthOffset] = useState(0);
-  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
+  // The month is fixed by the route key — the Year view is where you switch
+  // months, so there's no month stepping inside this screen.
+  const monthOffset = useMemo(() => {
+    const key = typeof params.key === "string" ? params.key : undefined;
+    if (!key) return 0;
+    const [y, m] = key.split("-").map(Number);
+    const d = new Date();
+    return (d.getFullYear() - y) * 12 + (d.getMonth() + 1 - m);
+  }, [params.key]);
 
   const today = localToday();
   const now = new Date();
@@ -68,26 +72,21 @@ export function HomeScreen({ navigation }: Props) {
     ...(viewedMonth.getFullYear() !== now.getFullYear() ? { year: "numeric" } : {}),
   });
 
-  // Trip mode: reopen inside the pocket she was last using.
-  const restored = useRef(false);
-  useEffect(() => {
-    if (restored.current) return;
-    restored.current = true;
-    const last = getSetting("lastPocket");
-    if (last) {
-      navigation.navigate("Pocket", { pocketId: last === "__everyday__" ? null : last });
-    }
-  }, [navigation]);
+  // New entries default to the month currently being browsed (clamping today's
+  // day into that month), so adding while viewing e.g. May doesn't land in July.
+  const monthDefaultDate = useMemo(() => {
+    if (monthOffset === 0) return today;
+    const daysInMonth = new Date(viewedMonth.getFullYear(), viewedMonth.getMonth() + 1, 0).getDate();
+    const day = Math.min(now.getDate(), daysInMonth);
+    return `${monthPrefix}-${String(day).padStart(2, "0")}`;
+  }, [monthOffset, monthPrefix, today, viewedMonth, now]);
+  const entry = useExpenseEntry(null, monthDefaultDate);
 
   const monthRows = useMemo(
     () => (rows ?? []).filter((r) => r.date.startsWith(monthPrefix)),
     [rows, monthPrefix],
   );
   const currency = getCurrency();
-  const monthsWithData = useMemo(
-    () => new Set((rows ?? []).map((r) => r.date.slice(0, 7))),
-    [rows],
-  );
 
   // Self-heal rows written under a different currency (single-currency app).
   useEffect(() => {
@@ -210,36 +209,18 @@ export function HomeScreen({ navigation }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={8}
+              style={[styles.backButton, { backgroundColor: theme.card, borderColor: theme.border }]}
+              accessibilityLabel="Back to year"
+            >
+              <Text style={[styles.backIcon, { color: theme.text }]}>‹</Text>
+            </Pressable>
             <View style={styles.headerText}>
-              <View style={styles.monthNav}>
-                <Pressable
-                  onPress={() => setMonthOffset((o) => o + 1)}
-                  hitSlop={10}
-                  accessibilityLabel="Previous month"
-                >
-                  <Text style={[styles.monthChevron, { color: theme.muted }]}>‹</Text>
-                </Pressable>
-                <Pressable onPress={() => setMonthPickerVisible(true)} hitSlop={6}>
-                  <Text style={[styles.eyebrow, { color: theme.muted }]}>
-                    {monthLabel.toUpperCase()} · ALL POCKETS
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setMonthOffset((o) => Math.max(0, o - 1))}
-                  disabled={monthOffset === 0}
-                  hitSlop={10}
-                  accessibilityLabel="Next month"
-                >
-                  <Text
-                    style={[
-                      styles.monthChevron,
-                      { color: monthOffset === 0 ? theme.border : theme.muted },
-                    ]}
-                  >
-                    ›
-                  </Text>
-                </Pressable>
-              </View>
+              <Text style={[styles.eyebrow, { color: theme.muted }]}>
+                {monthLabel.toUpperCase()} · ALL POCKETS
+              </Text>
               <Text style={[styles.total, { color: theme.text }]}>
                 {formatMoney(monthSpent, currency)}
               </Text>
@@ -265,26 +246,11 @@ export function HomeScreen({ navigation }: Props) {
                 </View>
               )}
             </View>
-            <Pressable
-              onPress={() => navigation.navigate("Settings")}
-              hitSlop={8}
-              style={[styles.memoryButton, { backgroundColor: theme.card, borderColor: theme.border }]}
-              accessibilityLabel="Settings"
-            >
-              <Text style={{ fontSize: 16 }}>✨</Text>
-            </Pressable>
           </View>
 
           {byCategory.length > 0 && (
             <View style={styles.section}>
-              <Pressable
-                onPress={() => navigation.navigate("Insights")}
-                style={styles.sectionHeaderRow}
-                hitSlop={6}
-              >
-                <Text style={[styles.sectionTitle, { color: theme.muted }]}>WHERE IT WENT</Text>
-                <Text style={[styles.seeTrends, { color: theme.accent }]}>See trends ›</Text>
-              </Pressable>
+              <Text style={[styles.sectionTitle, { color: theme.muted }]}>WHERE IT WENT</Text>
               <CategoryBreakdown
                 theme={theme}
                 categories={categories}
@@ -305,7 +271,7 @@ export function HomeScreen({ navigation }: Props) {
                     name="Everyday"
                     detail={monthOffset === 0 ? "this month" : `in ${monthLabel}`}
                     total={formatMoney(everydayTotal, currency)}
-                    onPress={() => navigation.navigate("Pocket", { pocketId: null })}
+                    onPress={() => router.push({ pathname: "/pocket/[id]", params: { id: "everyday" } })}
                   />
                 )}
                 {visiblePockets.map((pocket) => {
@@ -327,7 +293,7 @@ export function HomeScreen({ navigation }: Props) {
                             : `in ${monthLabel}`
                       }
                       total={total > 0 ? formatMoney(total, currency) : null}
-                      onPress={() => navigation.navigate("Pocket", { pocketId: pocket.id })}
+                      onPress={() => router.push({ pathname: "/pocket/[id]", params: { id: pocket.id } })}
                     />
                   );
                 })}
@@ -416,19 +382,6 @@ export function HomeScreen({ navigation }: Props) {
         onClose={() => setEditingExpense(null)}
       />
 
-      <MonthPicker
-        theme={theme}
-        visible={monthPickerVisible}
-        monthsWithData={monthsWithData}
-        viewedYear={viewedMonth.getFullYear()}
-        viewedMonth={viewedMonth.getMonth() + 1}
-        onPick={(year, month) => {
-          setMonthOffset((now.getFullYear() - year) * 12 + (now.getMonth() + 1 - month));
-          setMonthPickerVisible(false);
-        }}
-        onClose={() => setMonthPickerVisible(false)}
-      />
-
       <PocketNameModal
         theme={theme}
         visible={creatingPocket}
@@ -436,7 +389,7 @@ export function HomeScreen({ navigation }: Props) {
         onSubmit={async (name, eventDate, target) => {
           const id = await createPocket(name, eventDate, target);
           setCreatingPocket(false);
-          navigation.navigate("Pocket", { pocketId: id });
+          router.push({ pathname: "/pocket/[id]", params: { id } });
         }}
         onCancel={() => setCreatingPocket(false)}
       />
@@ -482,10 +435,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 14,
     paddingBottom: 6,
   },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  backIcon: { fontSize: 24, fontWeight: "600", marginTop: -3 },
   headerText: { flex: 1, gap: 4 },
   monthNav: { flexDirection: "row", alignItems: "center", gap: 10 },
   monthChevron: { fontSize: 22, fontWeight: "700", marginTop: -3 },

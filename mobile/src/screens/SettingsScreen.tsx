@@ -1,4 +1,3 @@
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useState } from "react";
@@ -34,12 +33,9 @@ import {
   type CategoryRecord,
 } from "../db";
 import { getCategoryMeta } from "../lib/categories";
-import type { RootStackParamList } from "../nav";
 import { useTheme } from "../theme";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
-
-export function SettingsScreen({ navigation }: Props) {
+export function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { data: categoryRows } = useCategories();
@@ -140,14 +136,6 @@ export function SettingsScreen({ navigation }: Props) {
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top }]}>
       <KeyboardAvoidingView style={styles.screen} behavior="padding">
         <View style={styles.header}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            hitSlop={10}
-            style={[styles.backButton, { backgroundColor: theme.card, borderColor: theme.border }]}
-            accessibilityLabel="Back"
-          >
-            <Text style={[styles.backIcon, { color: theme.text }]}>‹</Text>
-          </Pressable>
           <Text style={[styles.title, { color: theme.text }]}>Settings</Text>
         </View>
 

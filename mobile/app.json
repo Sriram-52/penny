@@ -38,7 +38,8 @@
             "backgroundColor": "#171310"
           }
         }
-      ]
+      ],
+      "expo-router"
     ],
     "extra": {
       "eas": {
@@ -51,6 +52,9 @@
     },
     "updates": {
       "url": "https://u.expo.dev/5e0cc1af-e214-4a5f-af6e-f8edce8d9479"
+    },
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
